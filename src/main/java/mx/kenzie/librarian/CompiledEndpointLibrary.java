@@ -55,7 +55,7 @@ public class CompiledEndpointLibrary extends SimpleLibrary {
         final String namespace = "mx.kenzie.librarian.generated.$QueryClass" + this.hashCode() + "$" + (++compile);
         final String internalName = namespace.replace(".", "/");
         final ClassWriter writer = new ClassWriter(ASM9 + ClassWriter.COMPUTE_MAXS);
-        writer.visit(V1_6, ACC_PUBLIC,
+        writer.visit(V11, ACC_PUBLIC,
             internalName, null, "java/lang/Object",
             new String[]{this.getInternalName(type)});
         final FieldVisitor fieldVisitor;
