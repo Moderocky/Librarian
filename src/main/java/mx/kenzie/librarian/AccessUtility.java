@@ -12,8 +12,7 @@ import java.util.Arrays;
 class AccessUtility {
     
     static Unsafe UNSAFE;
-    private static Field methodAccessorField;
-    private static Field rootField;
+    private static long offset;
     
     static {
         try {
@@ -23,13 +22,10 @@ class AccessUtility {
                 return (Unsafe) field.get(null);
             });
             final Field field = Class.class.getDeclaredField("module");
-            final long offset = UNSAFE.objectFieldOffset(field);
+            offset = UNSAFE.objectFieldOffset(field);
             UNSAFE.putObject(AccessUtility.class, offset, Object.class.getModule());
-            methodAccessorField = Method.class.getDeclaredField("methodAccessor");
-            access(methodAccessorField);
-            rootField = Method.class.getDeclaredField("root");
-            access(rootField);
         } catch (Throwable ex) {
+            ex.printStackTrace();
             UNSAFE = null;
         }
     }
@@ -58,26 +54,12 @@ class AccessUtility {
         return getMatchingMethod(object.getClass().getSuperclass(), type, name, params);
     }
     
-    static void squashAccessors(Method first, Method second) {
-        if (UNSAFE == null) return;
-        try {
-            methodAccessorField.set(root(first), methodAccessorField.get(root(second)));
-            methodAccessorField.set(first, methodAccessorField.get(root(second)));
-        } catch (Throwable ignore) {
-            ignore.printStackTrace();
-        }
-    }
-    
-    static Method root(Method method) {
-        try {
-            return (Method) rootField.get(method);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    
     static void access(final AccessibleObject object) {
         object.setAccessible(true);
+    }
+    
+    static void moveModule(Class<?> from, Class<?> to) {
+        UNSAFE.putObject(from, offset, to.getModule());
     }
     
 }

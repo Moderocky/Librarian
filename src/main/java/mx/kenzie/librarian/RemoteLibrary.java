@@ -139,6 +139,7 @@ public class RemoteLibrary implements Library<Remote> {
     
     @Override
     public <Query> Query lookFor(Class<? extends Query> type) {
+        assert type.isInterface();
         class Handler implements InvocationHandler {
             final Map<Method, Endpoint> map = new HashMap<>();
             

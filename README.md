@@ -82,6 +82,45 @@ The dependency information for Cobweb is below.
 </dependency>
 ```
 
+### Compiled Library Endpoints
+
+In some scenarios, the added overhead of using reflection proxies may be too great, especially for libraries which require a lot of repeat calls and would benefit from Hotspot's native JIT optimisations.
+
+Librarian contains the `CompiledEndpointLibrary` implementation, an extension of the simple library, which aims to solve this issue.
+
+As the name suggests, this advanced library generates and compiles an endpoint implementation at runtime to Java bytecode, which means the library methods require no reflection to run and gain all the standard JIT optimisations.
+
+#### Benefits
+ - Significantly faster than proxy endpoints.
+ - Able to undergo JIT optimisation.
+ - No reflection or proxies required for use.
+ - Able to re-use existing endpoints in some scenarios.
+
+#### Caveats
+ - Unable to use local or private interfaces/methods.
+ - Requires creation of a new class for each unique endpoint.
+ - Classes and loader are kept in memory if user stores references.
+
+
+The dependencies for the necessary ASM version are below.
+
+```xml
+<dependency>
+    <groupId>org.ow2.asm</groupId>
+    <artifactId>asm</artifactId>
+    <version>9.1</version>
+    <scope>compile</scope>
+</dependency>
+```
+```xml
+<dependency>
+    <groupId>org.ow2.asm</groupId>
+    <artifactId>asm-commons</artifactId>
+    <version>9.1</version>
+    <scope>compile</scope>
+</dependency>
+```
+
 ### Examples
 
 Registering and requesting a simple resource by known class.
@@ -146,7 +185,6 @@ assert bob.c() == 5; // Populated from Jeremy
 assert bob.d() == 6; // Populated from Jeremy
 ```
 
-
 (Remote Library)
 Exporting a remote object, then accessing it using a `lookFor` query.
 
@@ -169,4 +207,37 @@ final Alice alice = library.lookFor(Alice.class); // We lookup the Jeremy interf
 assert alice != null;
 assert alice.a() == 1;
 assert alice.b() == 2;
+```
+
+(Compiled Library)
+Creating and re-using a compiled endpoint.
+```java 
+final Library<Object> library = new CompiledEndpointLibrary();
+assert library.register(new Alice());
+final Bob bob = library.lookFor(Bob.class); // Endpoint is compiled here
+assert bob != null;
+assert bob.a() == 1;
+assert bob.b() == 2;
+final Bob two = library.lookFor(Bob.class);
+assert bob.getClass() == two.getClass(); // Will re-use the compiled class
+
+public interface Bob {
+        int a();
+        
+        int b();
+        
+        int c(); // Will throw error if used - no implementation
+        
+        int d(); // Will throw error if used - no implementation
+    }
+    
+public static class Alice {
+    public int a() {
+        return 1;
+    }
+    
+    public int b() {
+        return 2;
+    }
+}
 ```

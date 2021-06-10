@@ -86,6 +86,7 @@ public class SimpleLibrary implements Library<Object> {
     
     @Override
     public <Query> Query lookFor(Class<? extends Query> type) {
+        assert type.isInterface();
         class Handler implements InvocationHandler {
             final Map<Method, Endpoint> map = new HashMap<>();
             
